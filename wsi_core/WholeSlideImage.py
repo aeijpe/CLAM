@@ -368,7 +368,8 @@ class WholeSlideImage(object):
         
         return level_downsamples
 
-    def process_contours(self, save_path, patch_level=0, patch_size=256, step_size=256, **kwargs):
+    # HERE patch_level == resolution level (x micron per pixel)
+    def process_contours(self, save_path, patch_level=0.5, patch_size=256, step_size=256, **kwargs):
         save_path_hdf5 = os.path.join(save_path, str(self.name) + '.h5')
         print("Creating patches for: ", self.name, "...",)
         elapsed = time.time()
@@ -389,14 +390,51 @@ class WholeSlideImage(object):
                     save_hdf5(save_path_hdf5, asset_dict, mode='a')
 
         return self.hdf5_file
+    
 
+    def get_best_level_for_spacing(self, patch_size: float, target_spacing: float):
+        epsilon = 0.1
+        # OpenSlide gives the resolution in centimeters so we convert this to microns
+        mpp_x = float(self.wsi.properties.get(openslide.PROPERTY_NAME_MPP_X))
+        mpp_y = float(self.wsi.properties.get(openslide.PROPERTY_NAME_MPP_Y))
+        print("MPP_X: ", mpp_x)
+        print("MPP_Y: " , mpp_y)
+
+        downsample_x, downsample_y = target_spacing / mpp_x, target_spacing / mpp_y
+        # get_best_level_for_downsample just chooses the largest level with a downsample less than user's downsample
+        # see https://github.com/openslide/openslide/issues/274
+        # so I made my own version of get_best_level_for_downsample
+        level_x = self.get_best_level_for_downsample_custom(downsample_x)
+        level_y = self.get_best_level_for_downsample_custom(downsample_y)
+
+        dist_x = target_spacing - mpp_x
+
+
+        print("LEVEL X: ", level_x)
+        assert level_x == level_y
+
+        level = level_x
+        new_patch_size = int(round(downsample_x * patch_size))
+
+        return level, new_patch_size
+    
+    def get_best_level_for_downsample_custom(self, downsample):
+        return np.argmin([abs(x-downsample) for x in self.wsi.level_downsamples])
+
+    
 
     def process_contour(self, cont, contour_holes, patch_level, save_path, patch_size = 256, step_size = 256,
         contour_fn='four_pt', use_padding=True, top_left=None, bot_right=None):
+        # NOW patch_level means required pixelspacing: 0.5. 
+        patch_level, new_patch_size = self.get_best_level_for_spacing(patch_size, patch_level)
+        print("PATCH LEVEL: ", patch_level)
+        print("NEW PATCH SIZE: ", new_patch_size)
+        step_size = new_patch_size
+
         start_x, start_y, w, h = cv2.boundingRect(cont) if cont is not None else (0, 0, self.level_dim[patch_level][0], self.level_dim[patch_level][1])
 
         patch_downsample = (int(self.level_downsamples[patch_level][0]), int(self.level_downsamples[patch_level][1]))
-        ref_patch_size = (patch_size*patch_downsample[0], patch_size*patch_downsample[1])
+        ref_patch_size = (new_patch_size*patch_downsample[0], new_patch_size*patch_downsample[1])
         
         img_w, img_h = self.level_dim[0]
         if use_padding:
@@ -463,7 +501,7 @@ class WholeSlideImage(object):
         if len(results)>0:
             asset_dict = {'coords' :          results}
             
-            attr = {'patch_size' :            patch_size, # To be considered...
+            attr = {'patch_size' :            new_patch_size, # To be considered...
                     'patch_level' :           patch_level,
                     'downsample':             self.level_downsamples[patch_level],
                     'downsampled_level_dim' : tuple(np.array(self.level_dim[patch_level])),
