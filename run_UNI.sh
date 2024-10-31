@@ -11,15 +11,15 @@
 
 
 # Start interactive bash session
-source /hpc/shared/uu_inf_aidsaitfl/miniconda3/bin/activate
+source /hpc/uu_inf_aidsaitfl/miniconda3/bin/activate
 conda activate clam_latest
 
-export TMPDIR=/hpc/shared/uu_inf_aidsaitfl/
+export TMPDIR=/hpc/uu_inf_aidsaitfl/
 # Create patches
-python download_TCGA_data.py
-# python create_patches_fp.py --source luad_dataset/ --save_dir luad_patched/ --res 0.5 --patch_size 256 --preset tcga.csv --seg --patch --stitch 
+# python download_TCGA_data.py
+python create_patches_fp.py --source brca_dataset/ --save_dir brca_patched/ --res 0.5 --patch_size 256 --preset tcga.csv --seg --patch --stitch 
 # 
 # export UNI_CKPT_PATH=checkpoints/UNI/pytorch_model.bin
 # # Adjust batch size, depending on GPU req! 
 # # Adjust target_path_size to 224?? --> is this solid or not?
-# CUDA_VISIBLE_DEVICES=0 python extract_features_fp.py --data_h5_dir luad_patched/ --data_slide_dir luad_dataset/ --csv_path luad_patched/process_list_autogen.csv --feat_dir ../MMP/src/data_wsi/tcga_luad/extracted_res0_5_patch256_uni/ --batch_size 256 --target_patch_size 256 --slide_ext .svs --model_name uni_v1
+# CUDA_VISIBLE_DEVICES=0 python extract_features_fp.py --data_h5_dir brca_patched/ --data_slide_dir luad_dataset/ --csv_path luad_patched/process_list_autogen.csv --feat_dir ../MMP/src/data_wsi/tcga_luad/extracted_res0_5_patch256_uni/ --batch_size 256 --target_patch_size 256 --slide_ext .svs --model_name uni_v1

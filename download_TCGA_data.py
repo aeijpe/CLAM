@@ -78,6 +78,7 @@ def get_data(dataset_type):
 
     directory = f'{dataset_type}_dataset'
     os.makedirs(directory, exist_ok=True)
+
     for item in ids:
         # Construct the full file path
         file_path = os.path.join(directory, item['filename'])
@@ -90,7 +91,6 @@ def get_data(dataset_type):
         else:
             print("we obtain: ", item['filename'])
             get_case(item['id'], directory)
-
 
     
 def read_slide_ids_from_csv(file_path):
@@ -176,8 +176,8 @@ def main():
     dataset = 'brca'
     file_path_slides = "../MMP/src/splits/survival/TCGA_BRCA_overall_survival_k=0"
 
-    filter_by_filename(dataset, file_path_slides)
-    # get_data(dataset)
+    # filter_by_filename(dataset, file_path_slides)
+    get_data(dataset)
     # rm_processed_slides(dataset)
 
 

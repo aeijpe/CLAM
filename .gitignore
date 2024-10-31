@@ -2,6 +2,7 @@
 __pycache__/
 notebooks
 luad_dataset/
+brca_dataset/
 luad_patched/
 jobs/
 checkpoints/UNI
