@@ -81,6 +81,8 @@ if __name__ == '__main__':
 	total = len(bags_dataset)
 
 	loader_kwargs = {'num_workers': 8, 'pin_memory': True} if device.type == "cuda" else {}
+	av_feat_size0 = 0.
+	av_feat_size1 = 0.
 
 	# for each WSI
 	for bag_candidate_idx in tqdm(range(total)):
@@ -112,10 +114,15 @@ if __name__ == '__main__':
 			features = file['features'][:]
 			print('features size: ', features.shape)
 			print('coordinates size: ', file['coords'].shape)
+			av_feat_size0 += features.shape[0]
+			av_feat_size1 += features.shape[1]
 
 		features = torch.from_numpy(features)
 		bag_base, _ = os.path.splitext(bag_name)
 		torch.save(features, os.path.join(args.feat_dir, 'pt_files', bag_base+'.pt'))
-
-
-
+	
+	av_feat_size0 /= total
+	av_feat_size1 /= total
+	
+	print("Average Nr of features 0: ", av_feat_size0)
+	print("Average Nr of features 1: ", av_feat_size1)

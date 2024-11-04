@@ -4,5 +4,8 @@ notebooks
 luad_dataset/
 brca_dataset/
 luad_patched/
+brca_patched/
+blca_dataset/
+blca_patched/
 jobs/
 checkpoints/UNI

@@ -397,8 +397,6 @@ class WholeSlideImage(object):
         # OpenSlide gives the resolution in centimeters so we convert this to microns
         mpp_x = float(self.wsi.properties.get(openslide.PROPERTY_NAME_MPP_X))
         mpp_y = float(self.wsi.properties.get(openslide.PROPERTY_NAME_MPP_Y))
-        print("MPP_X: ", mpp_x)
-        print("MPP_Y: " , mpp_y)
 
         downsample_x, downsample_y = target_spacing / mpp_x, target_spacing / mpp_y
         # get_best_level_for_downsample just chooses the largest level with a downsample less than user's downsample
@@ -409,8 +407,6 @@ class WholeSlideImage(object):
 
         dist_x = target_spacing - mpp_x
 
-
-        print("LEVEL X: ", level_x)
         assert level_x == level_y
 
         level = level_x
@@ -427,8 +423,8 @@ class WholeSlideImage(object):
         contour_fn='four_pt', use_padding=True, top_left=None, bot_right=None):
         # NOW patch_level means required pixelspacing: 0.5. 
         patch_level, new_patch_size = self.get_best_level_for_spacing(patch_size, patch_level)
-        print("PATCH LEVEL: ", patch_level)
-        print("NEW PATCH SIZE: ", new_patch_size)
+       
+        # print("NEW PATCH SIZE: ", new_patch_size)
         step_size = new_patch_size
 
         start_x, start_y, w, h = cv2.boundingRect(cont) if cont is not None else (0, 0, self.level_dim[patch_level][0], self.level_dim[patch_level][1])

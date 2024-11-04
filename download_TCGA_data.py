@@ -154,27 +154,13 @@ def filter_by_filename(dataset, file_path_slides):
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(rows_to_keep) 
-    
-
-def rm_processed_slides(dataset):
-    done_file = f'manifest_{dataset}_done.csv' 
-    dir_files = os.listdir(f"{dataset}_dataset")
-    print(dir_files)
-    print(len(dir_files))
-
-    with open(done_file, 'a', newline='') as outfile:
-        writer = csv.writer(outfile)
-        for item in dir_files:
-            writer.writerow([item])  # Write each item in a new row
-
-
 
 
 
 def main():
     # CHANGE params!!
-    dataset = 'brca'
-    file_path_slides = "../MMP/src/splits/survival/TCGA_BRCA_overall_survival_k=0"
+    dataset = 'blca'
+    file_path_slides = "../MMP/src/splits/survival/TCGA_BLCA_overall_survival_k=0"
 
     # filter_by_filename(dataset, file_path_slides)
     get_data(dataset)
