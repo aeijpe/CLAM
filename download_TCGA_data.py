@@ -1,26 +1,17 @@
 import requests
 import re
-import json
-import subprocess
 import pandas as pd
 import os
 import csv
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import argparse
 
 def get_case(file_id, dir, retry_count=5, backoff_factor=2):
-    # data_endpt = "https://api.gdc.cancer.gov/data/{}".format(file_id)
-
-    # response = requests.get(data_endpt, headers = {"Content-Type": "application/json"})
-
-    # # The file name can be found in the header within the Content-Disposition key.
-    # response_head_cd = response.headers["Content-Disposition"]
-
-    # file_name = re.findall("filename=(.+)", response_head_cd)[0]
-    # file_dir = os.path.join(dir, file_name)
-
-    # with open(file_dir, "wb") as output_file:
-    #     output_file.write(response.content)
+    """
+    Download a specific slide from the TCGA data portal
+    """
+    # File name
     data_endpt = f"https://api.gdc.cancer.gov/data/{file_id}"
     
     # Configure retry strategy
@@ -64,8 +55,12 @@ def get_case(file_id, dir, retry_count=5, backoff_factor=2):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
+
 def get_data(dataset_type):
-    manifest_df = pd.read_csv(f'manifest_{dataset_type}_filtered.csv', sep=',')
+    """
+    Obtains all slides from the TCGA data portal
+    """
+    manifest_df = pd.read_csv(f'manifests/manifest_{dataset_type}_filtered.csv', sep=',')
 
     #   Check if required columns are present
     if 'id' not in manifest_df.columns:
@@ -83,46 +78,52 @@ def get_data(dataset_type):
         # Construct the full file path
         file_path = os.path.join(directory, item['filename'])
         
-
         # Check if the file exists
         if os.path.isfile(file_path):
             print("we skip: ", item['filename'])
             continue
         else:
+            # Download case
             print("we obtain: ", item['filename'])
             get_case(item['id'], directory)
 
-    
-def read_slide_ids_from_csv(file_path):
+def obtain_case_names(file_path):
+    """
+    Obtains all slide names or which rna-seq data is also available and returns them as a list.
+    """
+    # Get train cases
+    train_file = os.path.join(file_path, 'train.csv')
+    train_slides = read_slide_ids_from_csv(train_file)
+
+    # Get test cases
+    test_file = os.path.join(file_path, 'test.csv')
+    test_slides = read_slide_ids_from_csv(test_file)
+
+    return train_slides + test_slides
+
+
+def read_slide_ids_from_csv(file):
     """
     Reads all items from the 'slide_id' column of the CSV file and returns them as a list.
     """
     slide_ids = []
-    train_file = os.path.join(file_path, 'train.csv')
-    with open(train_file, mode='r', newline='') as file:
+    with open(file, mode='r', newline='') as file:
         reader = csv.DictReader(file)
         for row in reader:
             slide_ids.append(row['slide_id'])
-
-
-    test_file = os.path.join(file_path, 'test.csv')
-    with open(test_file, mode='r', newline='') as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            slide_ids.append(row['slide_id'])
-    
-    print(len(slide_ids))
 
     return slide_ids
 
 
 def filter_by_filename(dataset, file_path_slides):
-    slide_ids = read_slide_ids_from_csv(file_path_slides)
-    input_file = f'manifest_{dataset}.txt' 
-    output_file = f'manifest_{dataset}_filtered_first.csv' 
-    output_file2 = f'manifest_{dataset}_filtered.csv' 
+    """
+    Filter our the slide names from the TCGA data manifest that also have rna-seq data and store them in a .csv file.
+    """
+    # Obtain slide names that also have rna-seq data
+    slide_ids = obtain_case_names(file_path_slides)
 
-    with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
+    # First filter out all the Diagnostic slides from the data
+    with open('manifests/manifest_{dataset}.txt', 'r') as infile, open(f'manifests/manifest_{dataset}_filtered_first.csv', 'w', newline='') as outfile:
         # Initialize a CSV writer for the output file
         csv_writer = csv.writer(outfile)
 
@@ -140,15 +141,15 @@ def filter_by_filename(dataset, file_path_slides):
                     # Write the filtered row to the CSV file
                     csv_writer.writerow(columns)
     
-    with open(output_file, mode='r', newline='') as file:
+    # Check which of those diagnostic slides have also rna-seq data
+    with open(f'manifests/manifest_{dataset}_filtered_first.csv', mode='r', newline='') as file:
         reader = csv.DictReader(file)
         rows_to_keep = [row for row in reader if row['filename'].replace('.svs', '') in slide_ids]
 
-    print(len(rows_to_keep))
     assert len(rows_to_keep) == len(slide_ids)
         
-    # Write filtered rows to a new CSV file
-    with open(output_file2, mode='w', newline='') as file:
+    # Write filtered sldie names to a new CSV file
+    with open(f'manifests/manifest_{dataset}_filtered.csv' , mode='w', newline='') as file:
         if rows_to_keep:
             fieldnames = rows_to_keep[0].keys()
             writer = csv.DictWriter(file, fieldnames=fieldnames)
@@ -157,15 +158,19 @@ def filter_by_filename(dataset, file_path_slides):
 
 
 
-def main():
-    # CHANGE params!!
-    dataset = 'blca'
-    file_path_slides = "../MMP/src/splits/survival/TCGA_BLCA_overall_survival_k=0"
+def main(args):
+    # Obtain the slide names from the TCGA data manifest that also have rna-seq data 
+    filter_by_filename(args.dataset, args.file_path)
 
-    # filter_by_filename(dataset, file_path_slides)
-    get_data(dataset)
-    # rm_processed_slides(dataset)
+    # Download the slised in .svs
+    get_data(args.dataset)
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='Obtain WSI data from the TCGA data portal.')
+
+    parser.add_argument('--dataset', type=str, default='brca',help='study name')
+    parser.add_argument('--file_path', type=str,default='../data/tcga_brca/splits/TCGA_BRCA_overall_survival_k=0')
+
+    args = parser.parse_args()
+    main(args)
