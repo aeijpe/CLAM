@@ -123,7 +123,7 @@ def filter_by_filename(dataset, file_path_slides):
     slide_ids = obtain_case_names(file_path_slides)
 
     # First filter out all the Diagnostic slides from the data
-    with open('manifests/manifest_{dataset}.txt', 'r') as infile, open(f'manifests/manifest_{dataset}_filtered_first.csv', 'w', newline='') as outfile:
+    with open(f'manifests/manifest_{dataset}.txt', 'r') as infile, open(f'manifests/manifest_{dataset}_filtered_first.csv', 'w', newline='') as outfile:
         # Initialize a CSV writer for the output file
         csv_writer = csv.writer(outfile)
 

@@ -3,9 +3,12 @@ __pycache__/
 notebooks
 luad_dataset/
 brca_dataset/
+blca_dataset/
+kirc_dataset/
+
 luad_patched/
 brca_patched/
-blca_dataset/
 blca_patched/
+kirc_patched/
 jobs/
 checkpoints/UNI
