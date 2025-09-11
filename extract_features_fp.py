@@ -80,7 +80,7 @@ if __name__ == '__main__':
 	model = model.to(device)
 	total = len(bags_dataset)
 
-	loader_kwargs = {'num_workers': 8, 'pin_memory': True} if device.type == "cuda" else {}
+	loader_kwargs = {'num_workers': 4, 'pin_memory': True} if device.type == "cuda" else {}
 	av_feat_size0 = 0.
 	av_feat_size1 = 0.
 
