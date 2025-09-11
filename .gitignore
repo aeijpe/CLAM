@@ -12,3 +12,5 @@ blca_patched/
 kirc_patched/
 jobs/
 checkpoints/UNI
+download_data.sh
+run_UNI.sh
