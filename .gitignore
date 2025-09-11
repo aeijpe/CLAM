@@ -14,3 +14,4 @@ jobs/
 checkpoints/UNI
 download_data.sh
 run_UNI.sh
+get_data.ipynb
